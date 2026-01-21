@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사이트 정보 관리</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-900">사이트 정보 관리</h1>
+            <div class="text-sm text-gray-500">
+                HOME &gt; 관리자 &gt; 코드관리 &gt; <span class="font-medium text-gray-900">사이트정보</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex" style="height: calc(100vh - 73px);">
+        <!-- Left Panel: Site List (480px) -->
+        <div class="w-[480px] bg-white border-r border-gray-200 flex flex-col h-full">
+            <!-- Search & Filter Header -->
+            <div class="p-4 border-b border-gray-200 shrink-0">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        사이트 목록
+                    </h2>
+                    <span id="siteCountDisplay" class="text-xs text-gray-400">11개</span>
+                </div>
+
+                <!-- Search & Status Filter -->
+                <div class="flex gap-2 mb-3">
+                    <div class="relative flex-1">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="사이트명 또는 URL 검색..."
+                            class="w-full border border-gray-300 rounded px-3 py-2 pl-9 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <select
+                        id="statusFilter"
+                        class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
+                    >
+                        <option value="all">전체</option>
+                        <option value="active">계약중</option>
+                        <option value="expired">만료</option>
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2">
+                    <button
+                        id="deleteSelectedBtn"
+                        class="px-3 py-1.5 border border-gray-300 text-gray-400 rounded text-xs font-medium"
+                        disabled
+                    >
+                        삭제 (0)
+                    </button>
+                    <button
+                        id="addNewSiteBtn"
+                        class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
+                    >
+                        + 신규등록
+                    </button>
+                </div>
+            </div>
+
+            <!-- Site Table -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="w-8 py-2 px-2 border-b border-gray-200">
+                                <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 rounded" />
+                            </th>
+                            <th class="py-2 px-2 text-left text-gray-600 border-b">사이트</th>
+                            <th class="py-2 px-2 text-center text-gray-600 border-b w-20">상태</th>
+                            <th class="py-2 px-2 text-center text-gray-600 border-b w-24">계약만료</th>
+                        </tr>
+                    </thead>
+                    <tbody id="siteTableBody">
+                        <!-- Sites will be rendered here -->
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden flex items-center justify-center h-40 text-gray-400">
+                    <div class="text-center py-12">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                        <p class="text-sm">검색 결과가 없습니다</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer" class="p-3 border-t border-gray-200 flex items-center justify-between bg-gray-50 shrink-0">
+                <span id="paginationInfo" class="text-xs text-gray-500">1-10 / 11건</span>
+                <div id="paginationButtons" class="flex items-center gap-1">
+                    <!-- Pagination buttons will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Detail -->
+        <div id="rightPanel" class="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
+            <!-- Empty State (No Selection) -->
+            <div id="noSelectionState" class="flex-1 flex items-center justify-center bg-gray-50 text-gray-400">
+                <div class="text-center">
+                    <svg class="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                    <p class="text-lg font-medium text-gray-500 mb-2">사이트를 선택하세요</p>
+                    <p class="text-sm">왼쪽 목록에서 사이트를 선택하면<br/>상세 정보를 편집할 수 있습니다</p>
+                </div>
+            </div>
+
+            <!-- Detail Content -->
+            <div id="detailContent" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+                <!-- Tabs -->
+                <div class="bg-white border-b border-gray-200 px-6 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-1">
+                            <button
+                                data-tab="info"
+                                class="tab-button px-4 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600 transition-colors"
+                            >
+                                기본 정보
+                            </button>
+                            <button
+                                data-tab="images"
+                                class="tab-button px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-1"
+                            >
+                                이미지 관리
+                                <span id="imageCountBadge" class="hidden bg-blue-100 text-blue-600 text-xs px-1.5 py-0.5 rounded-full">0</span>
+                            </button>
+                        </div>
+                        <h2 id="detailSiteName" class="text-lg font-bold text-gray-800">사이트명</h2>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    <!-- Info Tab -->
+                    <div id="infoTab" class="tab-content space-y-6">
+                        <!-- 기본 정보 Card -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-5">
+                            <h3 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-blue-500 rounded"></span>기본 정보
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">
+                                        메이커명 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="siteName"
+                                        placeholder="사이트명을 입력하세요"
+                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">
+                                        URL <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="siteUrl"
+                                        placeholder="https://www.example.com"
+                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 로고 Card -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-5">
+                            <h3 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-green-500 rounded"></span>로고
+                            </h3>
+                            <div class="flex items-start gap-4">
+                                <div id="logoPreview" class="w-32 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                                    <span class="text-4xl">🏢</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <label class="px-4 py-2 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600 cursor-pointer">
+                                            파일 선택
+                                            <input type="file" class="hidden" accept="image/*" />
+                                        </label>
+                                        <button id="deleteLogoBtn" class="hidden px-4 py-2 border border-red-500 text-red-500 rounded text-sm font-medium hover:bg-red-50">
+                                            삭제
+                                        </button>
+                                    </div>
+                                    <p id="logoFilename" class="text-xs text-gray-400">등록된 로고가 없습니다</p>
+                                    <p class="text-xs text-gray-400 mt-1">권장 사이즈: 200x80px, PNG/GIF/JPG</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 계약 정보 Card -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-5">
+                            <h3 class="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-purple-500 rounded"></span>계약 정보
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">
+                                        계약시작일 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="startDate"
+                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">
+                                        계약만료일 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="endDate"
+                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">정렬순서</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        id="sortOrder"
+                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-1">계약 상태</label>
+                                    <div class="flex items-center h-[38px]">
+                                        <span id="contractStatusBadge" class="px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-600">
+                                            계약중
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images Tab -->
+                    <div id="imagesTab" class="tab-content hidden">
+                        <div class="bg-white rounded-lg border border-gray-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <span class="w-1 h-4 bg-orange-500 rounded"></span>
+                                    이미지 목록 (<span id="imageListCount">0</span>)
+                                </h3>
+                                <div class="flex gap-2">
+                                    <button
+                                        id="deleteImagesBtn"
+                                        class="px-3 py-1.5 border border-gray-300 text-gray-400 rounded text-xs font-medium"
+                                        disabled
+                                    >
+                                        삭제 (0)
+                                    </button>
+                                    <button
+                                        id="addImageBtn"
+                                        class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
+                                    >
+                                        + 이미지 추가
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="border border-gray-200 rounded overflow-hidden">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="w-10 py-2 px-3 border-b border-gray-200">
+                                                <input type="checkbox" id="selectAllImages" class="w-4 h-4 rounded" />
+                                            </th>
+                                            <th class="py-2 px-3 text-left text-gray-600 border-b w-32">이미지 구분</th>
+                                            <th class="py-2 px-3 text-left text-gray-600 border-b">파일</th>
+                                            <th class="py-2 px-3 text-center text-gray-600 border-b w-24">미리보기</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="imageTableBody">
+                                        <!-- Images will be rendered here -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty State -->
+                                <div id="imageEmptyState" class="text-center py-12 text-gray-400">
+                                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-sm">등록된 이미지가 없습니다</p>
+                                    <p class="text-xs mt-1">[이미지 추가] 버튼을 클릭하여 추가하세요</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="bg-white border-t border-gray-200 px-6 py-4 shrink-0 flex items-center justify-between">
+                    <button
+                        id="deleteSiteBtn"
+                        class="px-4 py-2 border border-red-500 text-red-500 rounded text-sm font-medium hover:bg-red-50"
+                    >
+                        삭제
+                    </button>
+                    <div class="flex gap-2">
+                        <button
+                            id="resetBtn"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50"
+                        >
+                            초기화
+                        </button>
+                        <button
+                            id="saveBtn"
+                            class="px-6 py-2 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600"
+                        >
+                            저장
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        let siteList = [
+            { 
+                id: 1, 
+                name: 'T G', 
+                url: 'http://www.trigem.co.kr', 
+                logo: 'tg_logo.gif',
+                logoPreview: '🏢',
+                startDate: '2003-01-01', 
+                endDate: '2100-12-31', 
+                sort: 1,
+                images: [
+                    { id: 101, category: '배너', filename: 'tg_banner_01.jpg' },
+                    { id: 102, category: '아이콘', filename: 'tg_icon.png' },
+                ]
+            },
+            { 
+                id: 2, 
+                name: 'TG&Co', 
+                url: 'http://www.tgnco.kr/main/main.jspa', 
+                logo: 'tgnco_logo.gif',
+                logoPreview: '🏢',
+                startDate: '2015-08-01', 
+                endDate: '2035-07-31', 
+                sort: 2,
+                images: []
+            },
+            { 
+                id: 3, 
+                name: 'EPSON', 
+                url: 'http://www.epson.co.kr', 
+                logo: 'epson_logo.gif',
+                logoPreview: '🖨️',
+                startDate: '2003-01-01', 
+                endDate: '2030-04-27', 
+                sort: 3,
+                images: [
+                    { id: 103, category: '배너', filename: 'epson_banner.jpg' },
+                ]
+            },
+            { 
+                id: 4, 
+                name: 'FUJI XEROX', 
+                url: 'http://xeroxsvc.co.kr', 
+                logo: 'fujixerox_logo.gif',
+                logoPreview: '🖨️',
+                startDate: '2014-07-01', 
+                endDate: '2027-12-31', 
+                sort: 3.5,
+                images: []
+            },
+            { 
+                id: 5, 
+                name: 'ASUS', 
+                url: 'https://www.asus.com/kr/', 
+                logo: 'asus_logo.gif',
+                logoPreview: '💻',
+                startDate: '2019-01-01', 
+                endDate: '2023-12-31', 
+                sort: 4,
+                images: []
+            },
+            { 
+                id: 6, 
+                name: 'Sindoh', 
+                url: 'https://www.sindoh.com/index.do?uk=ko', 
+                logo: 'sindoh_logo.gif',
+                logoPreview: '🖨️',
+                startDate: '2021-06-01', 
+                endDate: '2025-12-31', 
+                sort: 4.5,
+                images: []
+            },
+            { 
+                id: 7, 
+                name: 'Amway', 
+                url: 'http://www.amway.co.kr/index.html', 
+                logo: 'amway_logo.gif',
+                logoPreview: '🏪',
+                startDate: '2018-01-01', 
+                endDate: '2100-12-31', 
+                sort: 4.7,
+                images: []
+            },
+            { 
+                id: 8, 
+                name: 'Huawei', 
+                url: 'http://consumer.huawei.com/kr/', 
+                logo: '',
+                logoPreview: '📱',
+                startDate: '2015-07-01', 
+                endDate: '2030-12-12', 
+                sort: 5,
+                images: []
+            },
+            { 
+                id: 9, 
+                name: 'ZTE', 
+                url: 'www.zte.com.cn', 
+                logo: 'zte_logo.gif',
+                logoPreview: '📱',
+                startDate: '2012-11-08', 
+                endDate: '2100-12-31', 
+                sort: 6,
+                images: []
+            },
+            { 
+                id: 10, 
+                name: '밀레시스텍', 
+                url: 'http://www.milre.com/index.php', 
+                logo: 'milre_logo.gif',
+                logoPreview: '🔐',
+                startDate: '2019-08-01', 
+                endDate: '2021-08-31', 
+                sort: 7.2,
+                images: []
+            },
+            { 
+                id: 11, 
+                name: 'Lenovo', 
+                url: 'http://www.lenovo.com', 
+                logo: 'lenovo_logo.gif',
+                logoPreview: '💻',
+                startDate: '2013-12-01', 
+                endDate: '2030-12-12', 
+                sort: 7.5,
+                images: []
+            },
+        ];
+
+        const imageCategoryOptions = [
+            { value: '', label: '선택' },
+            { value: '배너', label: '배너' },
+            { value: '아이콘', label: '아이콘' },
+            { value: '로고', label: '로고' },
+            { value: '기타', label: '기타' },
+        ];
+
+        // State
+        let searchKeyword = '';
+        let statusFilter = 'all';
+        let currentPage = 1;
+        const ITEMS_PER_PAGE = 10;
+        let selectedSite = null;
+        let selectedRows = [];
+        let activeTab = 'info';
+        let selectedImageRows = [];
+
+        // Get today's date
+        const today = new Date().toISOString().split('T')[0];
+
+        // Get contract status
+        function getContractStatus(endDate) {
+            return endDate >= today ? 'active' : 'expired';
+        }
+
+        // Filter sites
+        function getFilteredSites() {
+            return siteList.filter(s => {
+                const matchSearch = !searchKeyword ||
+                    s.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                    s.url.toLowerCase().includes(searchKeyword.toLowerCase());
+                const status = getContractStatus(s.endDate);
+                const matchStatus = statusFilter === 'all' ||
+                    (statusFilter === 'active' && status === 'active') ||
+                    (statusFilter === 'expired' && status === 'expired');
+                return matchSearch && matchStatus;
+            });
+        }
+
+        // Get paginated sites
+        function getPaginatedSites() {
+            const filtered = getFilteredSites();
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            return filtered.slice(start, end);
+        }
+
+        // Render site table
+        function renderSiteTable() {
+            const tbody = document.getElementById('siteTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const filtered = getFilteredSites();
+            const paginated = getPaginatedSites();
+
+            if (paginated.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                tbody.innerHTML = paginated.map(site => {
+                    const status = getContractStatus(site.endDate);
+                    const isSelected = selectedSite && selectedSite.id === site.id;
+                    const isChecked = selectedRows.includes(site.id);
+
+                    return `
+                        <tr
+                            class="site-row border-b border-gray-100 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}"
+                            data-site-id="${site.id}"
+                        >
+                            <td class="py-2 px-2 text-center" onclick="event.stopPropagation()">
+                                <input
+                                    type="checkbox"
+                                    class="site-checkbox w-4 h-4 rounded"
+                                    data-site-id="${site.id}"
+                                    ${isChecked ? 'checked' : ''}
+                                />
+                            </td>
+                            <td class="py-2 px-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">${site.logoPreview}</span>
+                                    <div class="min-w-0">
+                                        <p class="font-medium truncate ${isSelected ? 'text-blue-700' : 'text-gray-800'}">
+                                            ${site.name || '(이름 없음)'}
+                                        </p>
+                                        <p class="text-xs text-gray-400 truncate">${site.url}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-2 px-2 text-center">
+                                <span class="px-2 py-0.5 rounded text-xs font-medium ${
+                                    status === 'active'
+                                        ? 'bg-green-100 text-green-600'
+                                        : 'bg-red-100 text-red-600'
+                                }">
+                                    ${status === 'active' ? '계약중' : '만료'}
+                                </span>
+                            </td>
+                            <td class="py-2 px-2 text-center text-xs text-gray-500">
+                                ${site.endDate}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Update count
+            document.getElementById('siteCountDisplay').textContent = `${filtered.length}개`;
+
+            // Render pagination
+            renderPagination();
+
+            // Update select all checkbox
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            selectAllCheckbox.checked = paginated.length > 0 && paginated.every(s => selectedRows.includes(s.id));
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const filtered = getFilteredSites();
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+            const paginationContainer = document.getElementById('paginationContainer');
+            const paginationButtons = document.getElementById('paginationButtons');
+            const paginationInfo = document.getElementById('paginationInfo');
+
+            if (totalPages <= 1) {
+                paginationContainer.classList.add('hidden');
+                return;
+            }
+
+            paginationContainer.classList.remove('hidden');
+
+            // Update info
+            const start = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+            const end = Math.min(currentPage * ITEMS_PER_PAGE, filtered.length);
+            paginationInfo.textContent = `${start}-${end} / ${filtered.length}건`;
+
+            // Generate page buttons
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            const pages = [];
+            for (let i = startPage; i <= endPage; i++) {
+                pages.push(i);
+            }
+
+            paginationButtons.innerHTML = `
+                <button
+                    class="pagination-btn px-2 py-1 text-xs rounded ${currentPage === 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'}"
+                    data-page="first"
+                    ${currentPage === 1 ? 'disabled' : ''}
+                >
+                    &laquo;
+                </button>
+                <button
+                    class="pagination-btn px-2 py-1 text-xs rounded ${currentPage === 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'}"
+                    data-page="prev"
+                    ${currentPage === 1 ? 'disabled' : ''}
+                >
+                    &lt;
+                </button>
+                ${pages.map(p => `
+                    <button
+                        class="pagination-btn px-2.5 py-1 text-xs rounded ${p === currentPage ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'}"
+                        data-page="${p}"
+                    >
+                        ${p}
+                    </button>
+                `).join('')}
+                <button
+                    class="pagination-btn px-2 py-1 text-xs rounded ${currentPage === totalPages ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'}"
+                    data-page="next"
+                    ${currentPage === totalPages ? 'disabled' : ''}
+                >
+                    &gt;
+                </button>
+                <button
+                    class="pagination-btn px-2 py-1 text-xs rounded ${currentPage === totalPages ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100'}"
+                    data-page="last"
+                    ${currentPage === totalPages ? 'disabled' : ''}
+                >
+                    &raquo;
+                </button>
+            `;
+        }
+
+        // Select site
+        function selectSite(siteId) {
+            selectedSite = siteList.find(s => s.id === siteId);
+            if (!selectedSite) return;
+
+            activeTab = 'info';
+            selectedImageRows = [];
+
+            // Show detail panel
+            document.getElementById('noSelectionState').classList.add('hidden');
+            document.getElementById('detailContent').classList.remove('hidden');
+
+            // Update detail
+            updateDetailPanel();
+
+            // Re-render table to show selection
+            renderSiteTable();
+        }
+
+        // Update detail panel
+        function updateDetailPanel() {
+            if (!selectedSite) return;
+
+            // Update title
+            document.getElementById('detailSiteName').textContent = selectedSite.name || '새 사이트';
+
+            // Update info tab
+            document.getElementById('siteName').value = selectedSite.name;
+            document.getElementById('siteUrl').value = selectedSite.url;
+            document.getElementById('startDate').value = selectedSite.startDate;
+            document.getElementById('endDate').value = selectedSite.endDate;
+            document.getElementById('sortOrder').value = selectedSite.sort;
+
+            // Update logo
+            const logoPreview = document.getElementById('logoPreview');
+            logoPreview.innerHTML = selectedSite.logoPreview ? 
+                `<span class="text-4xl">${selectedSite.logoPreview}</span>` :
+                '<span class="text-gray-400 text-xs">로고 없음</span>';
+            
+            document.getElementById('logoFilename').textContent = selectedSite.logo || '등록된 로고가 없습니다';
+            document.getElementById('deleteLogoBtn').classList.toggle('hidden', !selectedSite.logo);
+
+            // Update contract status
+            const status = getContractStatus(selectedSite.endDate);
+            const statusBadge = document.getElementById('contractStatusBadge');
+            if (status === 'active') {
+                statusBadge.className = 'px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-600';
+                statusBadge.textContent = '계약중';
+            } else {
+                statusBadge.className = 'px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-600';
+                statusBadge.textContent = '계약 만료';
+            }
+
+            // Update image count badge
+            const imageCountBadge = document.getElementById('imageCountBadge');
+            const imageListCount = document.getElementById('imageListCount');
+            imageListCount.textContent = selectedSite.images.length;
+            if (selectedSite.images.length > 0) {
+                imageCountBadge.textContent = selectedSite.images.length;
+                imageCountBadge.classList.remove('hidden');
+            } else {
+                imageCountBadge.classList.add('hidden');
+            }
+
+            // Render images
+            renderImageTable();
+
+            // Switch to active tab
+            switchTab(activeTab);
+        }
+
+        // Switch tab
+        function switchTab(tab) {
+            activeTab = tab;
+
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                if (btn.dataset.tab === tab) {
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    btn.classList.add('border-blue-500', 'text-blue-600');
+                } else {
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                    btn.classList.remove('border-blue-500', 'text-blue-600');
+                }
+            });
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            if (tab === 'info') {
+                document.getElementById('infoTab').classList.remove('hidden');
+            } else if (tab === 'images') {
+                document.getElementById('imagesTab').classList.remove('hidden');
+            }
+        }
+
+        // Render image table
+        function renderImageTable() {
+            if (!selectedSite) return;
+
+            const tbody = document.getElementById('imageTableBody');
+            const emptyState = document.getElementById('imageEmptyState');
+
+            if (selectedSite.images.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                tbody.innerHTML = selectedSite.images.map(image => {
+                    const isChecked = selectedImageRows.includes(image.id);
+                    return `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-2 px-3 text-center">
+                                <input
+                                    type="checkbox"
+                                    class="image-checkbox w-4 h-4 rounded"
+                                    data-image-id="${image.id}"
+                                    ${isChecked ? 'checked' : ''}
+                                />
+                            </td>
+                            <td class="py-2 px-3">
+                                <select
+                                    class="image-category w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                                    data-image-id="${image.id}"
+                                >
+                                    ${imageCategoryOptions.map(opt => `
+                                        <option value="${opt.value}" ${image.category === opt.value ? 'selected' : ''}>
+                                            ${opt.label}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </td>
+                            <td class="py-2 px-3">
+                                <div class="flex items-center gap-2">
+                                    <label class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs font-medium hover:bg-gray-200 cursor-pointer">
+                                        파일선택
+                                        <input type="file" class="hidden" accept="image/*" />
+                                    </label>
+                                    <span class="text-sm text-gray-500">${image.filename || '선택된 파일 없음'}</span>
+                                </div>
+                            </td>
+                            <td class="py-2 px-3 text-center">
+                                ${image.filename ? `
+                                    <div class="w-12 h-12 bg-gray-100 rounded mx-auto flex items-center justify-center">
+                                        <span class="text-xl">🖼️</span>
+                                    </div>
+                                ` : '<span class="text-gray-400 text-xs">-</span>'}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Update select all checkbox
+            const selectAllImages = document.getElementById('selectAllImages');
+            selectAllImages.checked = selectedSite.images.length > 0 && 
+                selectedImageRows.length === selectedSite.images.length;
+
+            // Update delete button
+            updateImageDeleteButton();
+        }
+
+        // Update image delete button
+        function updateImageDeleteButton() {
+            const btn = document.getElementById('deleteImagesBtn');
+            if (selectedImageRows.length > 0) {
+                btn.disabled = false;
+                btn.classList.remove('border-gray-300', 'text-gray-400');
+                btn.classList.add('border-red-500', 'text-red-500', 'hover:bg-red-50');
+                btn.textContent = `삭제 (${selectedImageRows.length})`;
+            } else {
+                btn.disabled = true;
+                btn.classList.add('border-gray-300', 'text-gray-400');
+                btn.classList.remove('border-red-500', 'text-red-500', 'hover:bg-red-50');
+                btn.textContent = '삭제 (0)';
+            }
+        }
+
+        // Update delete button
+        function updateDeleteButton() {
+            const btn = document.getElementById('deleteSelectedBtn');
+            if (selectedRows.length > 0) {
+                btn.disabled = false;
+                btn.classList.remove('border-gray-300', 'text-gray-400');
+                btn.classList.add('border-red-500', 'text-red-500', 'hover:bg-red-50');
+                btn.textContent = `삭제 (${selectedRows.length})`;
+            } else {
+                btn.disabled = true;
+                btn.classList.add('border-gray-300', 'text-gray-400');
+                btn.classList.remove('border-red-500', 'text-red-500', 'hover:bg-red-50');
+                btn.textContent = '삭제 (0)';
+            }
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Search
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchKeyword = e.target.value;
+                currentPage = 1;
+                renderSiteTable();
+            });
+
+            // Status filter
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                statusFilter = e.target.value;
+                currentPage = 1;
+                renderSiteTable();
+            });
+
+            // Select all sites
+            document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+                const paginated = getPaginatedSites();
+                const pageIds = paginated.map(s => s.id);
+                
+                if (e.target.checked) {
+                    selectedRows = [...new Set([...selectedRows, ...pageIds])];
+                } else {
+                    selectedRows = selectedRows.filter(id => !pageIds.includes(id));
+                }
+                
+                updateDeleteButton();
+                renderSiteTable();
+            });
+
+            // Site row click
+            document.addEventListener('click', (e) => {
+                const row = e.target.closest('.site-row');
+                if (row) {
+                    const siteId = parseInt(row.dataset.siteId);
+                    selectSite(siteId);
+                }
+            });
+
+            // Site checkbox
+            document.addEventListener('change', (e) => {
+                if (e.target.classList.contains('site-checkbox')) {
+                    const siteId = parseInt(e.target.dataset.siteId);
+                    if (e.target.checked) {
+                        selectedRows.push(siteId);
+                    } else {
+                        selectedRows = selectedRows.filter(id => id !== siteId);
+                    }
+                    updateDeleteButton();
+                }
+            });
+
+            // Pagination
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('pagination-btn')) {
+                    const page = e.target.dataset.page;
+                    const filtered = getFilteredSites();
+                    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+
+                    if (page === 'first') {
+                        currentPage = 1;
+                    } else if (page === 'prev') {
+                        currentPage = Math.max(1, currentPage - 1);
+                    } else if (page === 'next') {
+                        currentPage = Math.min(totalPages, currentPage + 1);
+                    } else if (page === 'last') {
+                        currentPage = totalPages;
+                    } else {
+                        currentPage = parseInt(page);
+                    }
+
+                    renderSiteTable();
+                }
+            });
+
+            // Delete selected sites
+            document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
+                if (selectedRows.length === 0) return;
+                if (confirm(`선택한 ${selectedRows.length}개의 사이트를 삭제하시겠습니까?`)) {
+                    siteList = siteList.filter(s => !selectedRows.includes(s.id));
+                    if (selectedSite && selectedRows.includes(selectedSite.id)) {
+                        selectedSite = null;
+                        document.getElementById('noSelectionState').classList.remove('hidden');
+                        document.getElementById('detailContent').classList.add('hidden');
+                    }
+                    selectedRows = [];
+                    updateDeleteButton();
+                    renderSiteTable();
+                }
+            });
+
+            // Add new site
+            document.getElementById('addNewSiteBtn').addEventListener('click', () => {
+                const newSite = {
+                    id: Date.now(),
+                    name: '',
+                    url: '',
+                    logo: '',
+                    logoPreview: '🆕',
+                    startDate: today,
+                    endDate: '2100-12-31',
+                    sort: siteList.length + 1,
+                    images: []
+                };
+                siteList.push(newSite);
+                selectSite(newSite.id);
+                renderSiteTable();
+            });
+
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchTab(btn.dataset.tab);
+                });
+            });
+
+            // Site info changes
+            ['siteName', 'siteUrl', 'startDate', 'endDate', 'sortOrder'].forEach(id => {
+                document.getElementById(id).addEventListener('change', (e) => {
+                    if (!selectedSite) return;
+                    const field = id.replace('site', '').replace('Order', '');
+                    const fieldName = field.charAt(0).toLowerCase() + field.slice(1);
+                    let value = e.target.value;
+                    
+                    if (id === 'sortOrder') {
+                        value = parseFloat(value);
+                        selectedSite.sort = value;
+                    } else if (id === 'siteName') {
+                        selectedSite.name = value;
+                    } else if (id === 'siteUrl') {
+                        selectedSite.url = value;
+                    } else if (id === 'startDate') {
+                        selectedSite.startDate = value;
+                    } else if (id === 'endDate') {
+                        selectedSite.endDate = value;
+                        // Update status badge
+                        const status = getContractStatus(value);
+                        const statusBadge = document.getElementById('contractStatusBadge');
+                        if (status === 'active') {
+                            statusBadge.className = 'px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-600';
+                            statusBadge.textContent = '계약중';
+                        } else {
+                            statusBadge.className = 'px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-600';
+                            statusBadge.textContent = '계약 만료';
+                        }
+                    }
+
+                    // Update in list
+                    siteList = siteList.map(s => s.id === selectedSite.id ? selectedSite : s);
+                    document.getElementById('detailSiteName').textContent = selectedSite.name || '새 사이트';
+                    renderSiteTable();
+                });
+            });
+
+            // Delete site
+            document.getElementById('deleteSiteBtn').addEventListener('click', () => {
+                if (!selectedSite) return;
+                if (confirm('이 사이트를 삭제하시겠습니까?')) {
+                    siteList = siteList.filter(s => s.id !== selectedSite.id);
+                    selectedSite = null;
+                    document.getElementById('noSelectionState').classList.remove('hidden');
+                    document.getElementById('detailContent').classList.add('hidden');
+                    renderSiteTable();
+                }
+            });
+
+            // Reset
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                if (!selectedSite) return;
+                const original = siteList.find(s => s.id === selectedSite.id);
+                if (original) {
+                    selectedSite = {...original};
+                    updateDetailPanel();
+                }
+            });
+
+            // Save
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                alert('저장되었습니다!');
+            });
+
+            // Image management
+            document.getElementById('addImageBtn').addEventListener('click', () => {
+                if (!selectedSite) return;
+                const newImage = {
+                    id: Date.now(),
+                    category: '',
+                    filename: ''
+                };
+                selectedSite.images.push(newImage);
+                siteList = siteList.map(s => s.id === selectedSite.id ? selectedSite : s);
+                updateDetailPanel();
+            });
+
+            // Select all images
+            document.getElementById('selectAllImages').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    selectedImageRows = selectedSite.images.map(img => img.id);
+                } else {
+                    selectedImageRows = [];
+                }
+                renderImageTable();
+            });
+
+            // Image checkbox
+            document.addEventListener('change', (e) => {
+                if (e.target.classList.contains('image-checkbox')) {
+                    const imageId = parseInt(e.target.dataset.imageId);
+                    if (e.target.checked) {
+                        selectedImageRows.push(imageId);
+                    } else {
+                        selectedImageRows = selectedImageRows.filter(id => id !== imageId);
+                    }
+                    updateImageDeleteButton();
+                    renderImageTable();
+                }
+            });
+
+            // Image category change
+            document.addEventListener('change', (e) => {
+                if (e.target.classList.contains('image-category')) {
+                    const imageId = parseInt(e.target.dataset.imageId);
+                    const value = e.target.value;
+                    selectedSite.images = selectedSite.images.map(img =>
+                        img.id === imageId ? {...img, category: value} : img
+                    );
+                    siteList = siteList.map(s => s.id === selectedSite.id ? selectedSite : s);
+                }
+            });
+
+            // Delete images
+            document.getElementById('deleteImagesBtn').addEventListener('click', () => {
+                if (!selectedSite || selectedImageRows.length === 0) return;
+                if (confirm(`선택한 ${selectedImageRows.length}개의 이미지를 삭제하시겠습니까?`)) {
+                    selectedSite.images = selectedSite.images.filter(img => !selectedImageRows.includes(img.id));
+                    siteList = siteList.map(s => s.id === selectedSite.id ? selectedSite : s);
+                    selectedImageRows = [];
+                    updateDetailPanel();
+                }
+            });
+        }
+
+        // Initialize
+        function init() {
+            renderSiteTable();
+            setupEventListeners();
+        }
+
+        // Run on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
